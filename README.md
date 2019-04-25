@@ -7,8 +7,14 @@ This allows you to collect all the keys being used to a redis instance.
 
 ## Usage
 
-`export E7O_REDIS_URL="redis://password@some.url.fi?db=some_db"`
-`export E7O_ENABLED="true"`
+```.rb
+require "e7o"
+
+E7o.configure do |config|
+    config.redis_host = "redis://PASSWORD@HOST:PORT"
+    config.enabled = true
+end
+```
 
 
 ## Installation
