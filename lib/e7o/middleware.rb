@@ -3,7 +3,11 @@ require 'redis'
 module E7o
   class Middleware
     def initialize(app)
-      @redis_connection ||= Redis.new url: E7o.config.redis_host
+      if e7o_enabled
+        @redis_connection ||= Redis.new url: E7o.config.redis_host
+      else
+        @redis_connection ||= nil
+      end
       @app = app
     end
 
@@ -29,6 +33,5 @@ module E7o
     def e7o_enabled
       E7o.config.enabled
     end
-
   end
 end
