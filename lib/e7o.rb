@@ -2,8 +2,8 @@ module E7o
   class Configuration < OpenStruct
     def setup_defaults
       self.redis_host = 'redis://localhost:6379'
-      self.e7o_request_store_key = :e7o_counter
       self.enabled = false
+      self.threaded = false
     end
   end 
 
@@ -26,9 +26,9 @@ module I18n
       separator = options[:separator] || I18n.default_separator
       flat_key = I18n.normalize_keys(locale, key, scope, separator).join(separator)
 
-      RequestStore.store[E7o.config.e7o_request_store_key] ||= {}
-      RequestStore.store[E7o.config.e7o_request_store_key][flat_key] ||= 0
-      RequestStore.store[E7o.config.e7o_request_store_key][flat_key] += 1
+      RequestStore.store[:e7o_counter] ||= {}
+      RequestStore.store[:e7o_counter][flat_key] ||= 0
+      RequestStore.store[:e7o_counter][flat_key] += 1
 
       super
     end
