@@ -39,7 +39,7 @@ module E7o
         end
       rescue Exception => e
         # Broad exception rescue because we do not want to compromise request
-        puts "Could not update i18n counter #{e}"
+        # Do nothing and continue...
       end
     end
 
