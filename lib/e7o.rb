@@ -38,4 +38,5 @@ end
 I18n::Backend::Simple.send :include, I18n::E7oKeyRegistry
 
 require 'e7o/middleware'
+require 'e7o/summary'
 require 'e7o/railtie' if defined?(Rails)
