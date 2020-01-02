@@ -10,9 +10,9 @@ module E7o
       end
       @app = app
     end
-
+    
     def call(env)
-
+      
       res = @app.call(env)
       if RequestStore.store[:e7o_counter] && e7o_enabled
         data = RequestStore.store[:e7o_counter]
@@ -27,9 +27,9 @@ module E7o
       end
       res
     end
-
+    
     private
-
+    
     def update_store(data)
       begin
         @redis_connection.multi do |multi|
@@ -42,7 +42,7 @@ module E7o
         # Do nothing and continue...
       end
     end
-
+    
     def e7o_enabled
       E7o.config.enabled
     end
