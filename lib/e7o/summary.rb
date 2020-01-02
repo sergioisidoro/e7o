@@ -1,3 +1,5 @@
+require 'i18n/tasks'
+
 module E7o
     class Summary
         DEFAULT_LOCALE = 'en'
