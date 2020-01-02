@@ -8,19 +8,22 @@ module E7o
         
         def initialize
             @redis = Redis.new url: E7o.config.redis_host
-            @_redis_keys = []
-            @all = []
+            @_redis_keys = nil
+            @all = nil
+            @all_without_locale = nil
             @used = []
             @unused = []
             @_count_by_locale = {}
             @_sum_by_locale = {}
         end
         
-        def gather_all_keys 
+        def gather_all_keys
             # hackish, forces initialization of I18n
             I18n.t(:foo)
             all_tranlsations = I18n.backend.send(:translations)
-            @all = travers_dict_keys("", all_tranlsations)
+            @all = travers_dict_keys("", all_tranlsations).flatten.uniq
+            @all_without_locale = @all.map{|x| x[3..-1]}.uniq
+            @all
         end
         
         def travers_dict_keys(root, dict)
@@ -40,38 +43,38 @@ module E7o
         end
         
         module RedisCounts
+
+        	def accessed_keys_by_locale(locale)
+                redis.keys("#{locale}.*")
+            end
+
             def accessed_keys
                 @_redis_keys ||= redis.keys("*")
             end
             
-            def accessed_keys_global
-                I18n.available_locales.each do |locale|
-                    accessed_keys(locale).each do |k|
-                        key =  strip_locale_from_key locale, k
-                        accessed_keys('global') << "global.#{key}" unless accessed_key?('global', key)
-                    end
-                end
-                accessed_keys('global')
-            end
+          	def global_keys
+          		@all_without_locale ||= @_redis_keys.map{|x| x[3..-1]}.uniq
+          	end
             
             def accessed_key? locale, key
                 k = add_locale_to_key(locale, key)
-                accessed_keys(locale).include?(k)
+                accessed_keys.include?(k)
             end
             
+            def accessed_key_any_locale? key
+                global_keys.include?(k)
+            end
+
+
             def count_by_locale locale
-                @_count_by_locale[locale] ||= accessed_keys(locale).size
+                @_count_by_locale[locale] ||= accessed_keys_by_locale(locale).size
             end
             
             def list_counts_by_locale
                 I18n.available_locales.each.reduce({}) do |result, locale|
-                    result[locale] = count_by_locale(locale)
-                    result
+                    @_count_by_locale[locale] = count_by_locale(locale)
                 end
-            end
-            
-            def count_all
-                accessed_keys_global.size
+                @_count_by_locale
             end
             
             def sum_all
@@ -79,7 +82,7 @@ module E7o
             end
             
             def sum_by_locale locale
-                @_sum_by_locale[locale] ||= accessed_keys(locale).reduce(0) {|sum, key| sum += redis.get(key).to_i }
+                @_sum_by_locale[locale] ||= accessed_keys_by_locale(locale).reduce(0) {|sum, key| sum += redis.get(key).to_i }
             end
         end
         
@@ -104,20 +107,14 @@ module E7o
                 keys
             end
             
-            def local_locale locale
-                load_locales.data[locale]
-            end
-            
-            def load_locales
-                @_locales ||= I18n::Tasks::BaseTask.new
-            end
         end
         
         include NativeKeys
         
-        def call locale = DEFAULT_LOCALE
-            native_keys(locale) do |k|
-                key = strip_locale_from_key locale, k
+        def call
+        	gather_all_keys
+
+            @all_without_locale.each do |key|
                 if translation_used?(key)
                     @used << key
                 else
